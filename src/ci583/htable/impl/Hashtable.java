@@ -143,10 +143,9 @@ public class Hashtable<V> {
 		}else if (obj.key.equals(key)){
 			return obj.value;
 		}else {
-			int nextPos = getNextLocation(startPos,stepNum++,key);
-			find(nextPos, key, stepNum);
+			int nextPos = getNextLocation(startPos,++stepNum,key);
+			return find(nextPos, key, stepNum);
 		}
-		return null;
 	}
 
 	/**
@@ -163,10 +162,9 @@ public class Hashtable<V> {
 		if (arr[startPos] == null)
 			return startPos;
 		else {
-			int nextPos = getNextLocation(startPos, stepNum++, key);
-			findEmpty(nextPos, stepNum, key);
+			int nextPos = getNextLocation(startPos, ++stepNum, key);
+			return findEmpty(nextPos, stepNum, key);
 		}
-		return -1;
 	}
 
 	/**
@@ -220,12 +218,12 @@ public class Hashtable<V> {
 	 * @return
 	 */
 	private int hash(String key) {
-        BigInteger hashVal = BigInteger.valueOf(key.charAt(0) - 96);
-        for (int i=0; i<key.length(); i++) {
-            BigInteger c = BigInteger.valueOf(key.charAt(i) - 96);
-            hashVal = (hashVal.multiply(BigInteger.valueOf(27).add(c).mod(BigInteger.valueOf(max))));
-        }
-        return hashVal.intValue();
+       int hash = 0;
+       int prime = 31;
+       for(int i=0; i<key.length();i++){
+           hash = (prime * hash + key.charAt(i))%arr.length;
+       }
+       return hash;
 	}
 
 	/**
@@ -249,12 +247,7 @@ public class Hashtable<V> {
 	 * @param n
 	 * @return
 	 */
-	private int nextPrime(int n) {
-		while (!isPrime(n)){
-			n++;
-		}
-		return n;
-	}
+	private int nextPrime(int n){ return (isPrime(n)) ? n : nextPrime(++n); }
 
 	/**
 	 * Resize the hashtable, to be used when the load factor exceeds maxLoad. The new size of
@@ -262,8 +255,16 @@ public class Hashtable<V> {
 	 * of the old array.
 	 */
 	private void resize() {
-		max = nextPrime(getCapacity() * 2);
-	}
+        max = nextPrime(max * 2);
+        Object[] oldArr= arr;
+        arr = new Object[max];
+        for (int i = 0; i < oldArr.length; i++) {
+            if (oldArr[i] != null) {
+                Pair obj = (Pair) oldArr[i];
+                put(obj.key, obj.value);
+            }
+        }
+    }
 
 	
 	/**
