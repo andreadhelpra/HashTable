@@ -62,9 +62,13 @@ public class Hashtable<V> {
 	 * @param value
 	 */
 	public void put(String key, V value) {
-		if (getLoadFactor()>maxLoad){
+        if (key==null){
+            throw new IllegalArgumentException("key is null");
+        }
+		else if (getLoadFactor()>maxLoad){
 			resize();
 		}
+
         int hashedKey = hash(key);
         int position = findEmpty(hashedKey, 0, key);
 		if (hasKey(key)){
@@ -72,6 +76,7 @@ public class Hashtable<V> {
             obj.value = value;
 		}else{
             arr[position] = new Pair(key, value);
+            itemCount++;
         }
 	}
 
@@ -115,7 +120,7 @@ public class Hashtable<V> {
 	 * Return the load factor, which is the ratio of itemCount to max
 	 * @return
 	 */
-	public double getLoadFactor() { return itemCount/max; }
+	public double getLoadFactor() { return ((double)itemCount)/max; }
 
 	/**
 	 * return the maximum capacity of the Hashtable
@@ -247,7 +252,12 @@ public class Hashtable<V> {
 	 * @param n
 	 * @return
 	 */
-	private int nextPrime(int n){ return (isPrime(n)) ? n : nextPrime(++n); }
+	private int nextPrime(int n){ return (isPrime(n)) ? n : nextPrime(++n);
+//	    while(!isPrime(n)){
+//	       n++;
+//	    }
+//	    return n;
+	}
 
 	/**
 	 * Resize the hashtable, to be used when the load factor exceeds maxLoad. The new size of
