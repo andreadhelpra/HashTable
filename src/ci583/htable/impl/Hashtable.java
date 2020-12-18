@@ -39,7 +39,6 @@ public class Hashtable<V> {
         this.max = nextPrime(initialCapacity);
 		this.probeType = pt;
 		this.arr = new Object[max];
-		this.itemCount=0;
 	}
 	
 	/**
@@ -62,21 +61,16 @@ public class Hashtable<V> {
 	 * @param value
 	 */
 	public void put(String key, V value) {
-        if (key==null){
-            throw new IllegalArgumentException("key is null");
-        }
-		else if (getLoadFactor()>maxLoad){
-			resize();
-		}
-
-        int hashedKey = hash(key);
-        int position = findEmpty(hashedKey, 0, key);
-		if (hasKey(key)){
-		    Pair obj = (Pair) arr[hashedKey];
-            obj.value = value;
-		}else{
-            arr[position] = new Pair(key, value);
-            itemCount++;
+	    try{
+            if (getLoadFactor()>maxLoad){
+                resize();
+            }
+            Pair obj = new Pair(key, value);
+            int position = findEmpty(hash(key), 0, key);
+            if (arr[position]==null) itemCount++;
+            arr[position]=obj;
+	    }catch (Exception e){
+            throw new IllegalArgumentException("key is null" + e);
         }
 	}
 
@@ -87,8 +81,8 @@ public class Hashtable<V> {
 	 * @return
 	 */
 	public V get(String key) {
-		return find(hash(key), key, 0);
-	}
+	    return (key == null)? null : find(hash(key), key, 0);
+        }
 
 	/**
 	 * Return true if the Hashtable contains this key, false otherwise 
@@ -96,10 +90,8 @@ public class Hashtable<V> {
 	 * @return
 	 */
 	public boolean hasKey(String key) {
-		if(get(key) != null)
-			return true;
-		return false;
-	}
+        return get(key) != null;
+    }
 
 	/**
 	 * Return all the keys in this Hashtable as a collection
@@ -120,7 +112,7 @@ public class Hashtable<V> {
 	 * Return the load factor, which is the ratio of itemCount to max
 	 * @return
 	 */
-	public double getLoadFactor() { return ((double)itemCount)/max; }
+	public double getLoadFactor() { return (double) itemCount/max; }
 
 	/**
 	 * return the maximum capacity of the Hashtable
@@ -142,14 +134,14 @@ public class Hashtable<V> {
 	 * @return
 	 */
 	private V find(int startPos, String key, int stepNum) {
-		Pair obj = (Pair) arr[startPos];
-		if (obj == null){
+		Pair obj = (Pair)arr[startPos];
+		if (arr[startPos] == null){
 			return null;
 		}else if (obj.key.equals(key)){
 			return obj.value;
 		}else {
-			int nextPos = getNextLocation(startPos,++stepNum,key);
-			return find(nextPos, key, stepNum);
+			int nextPos = getNextLocation(startPos,stepNum +1,key);
+			return find(nextPos, key, stepNum+1);
 		}
 	}
 
@@ -164,12 +156,13 @@ public class Hashtable<V> {
 	 * @return
 	 */
 	private int findEmpty(int startPos, int stepNum, String key) {
-		if (arr[startPos] == null)
-			return startPos;
-		else {
-			int nextPos = getNextLocation(startPos, ++stepNum, key);
-			return findEmpty(nextPos, stepNum, key);
-		}
+        Pair obj = (Pair)arr[startPos];
+	    if (arr[startPos]==null || obj.key.equals(key)){
+	        return startPos;
+        }
+	    else {
+            return findEmpty(getNextLocation(startPos, stepNum + 1, key), stepNum + 1, key);
+        }
 	}
 
 	/**
@@ -223,12 +216,19 @@ public class Hashtable<V> {
 	 * @return
 	 */
 	private int hash(String key) {
-       int hash = 0;
-       int prime = 31;
-       for(int i=0; i<key.length();i++){
-           hash = (prime * hash + key.charAt(i))%arr.length;
-       }
-       return hash;
+        int hashVal = key.hashCode();
+        hashVal %= max;
+
+        if (hashVal < 0) {
+            hashVal += max;
+        }
+        return hashVal;
+//	   int hash = 0;
+//
+//       for(int i=0; i<key.length();i++){
+//           hash = (hash + key.charAt(i))%max;
+//       }
+//       return hash % max;
 	}
 
 	/**
@@ -237,7 +237,8 @@ public class Hashtable<V> {
 	 * @return
 	 */
 	private boolean isPrime(int n) {
-        if(n <= 2) return true; // 1 and 2 are prime numbers
+	    if(n<2)return false;
+        if(n == 2) return true; // 2 is a prime number
         if(n%2==0) return false; // even numbers are not prime
 		// clock initiated with 3. the clock adds 2 at each cycle
 		// as we already know even numbers are not prime
@@ -252,11 +253,11 @@ public class Hashtable<V> {
 	 * @param n
 	 * @return
 	 */
-	private int nextPrime(int n){ return (isPrime(n)) ? n : nextPrime(++n);
-//	    while(!isPrime(n)){
-//	       n++;
-//	    }
-//	    return n;
+	private int nextPrime(int n){
+	    if (n % 2 == 0) {
+            n++;
+        }
+	    return (isPrime(n)) ? n : nextPrime(n+=2);
 	}
 
 	/**
@@ -268,9 +269,9 @@ public class Hashtable<V> {
         max = nextPrime(max * 2);
         Object[] oldArr= arr;
         arr = new Object[max];
-        for (int i = 0; i < oldArr.length; i++) {
-            if (oldArr[i] != null) {
-                Pair obj = (Pair) oldArr[i];
+        for (Object current : oldArr) {
+            if (current != null) {
+                Pair obj = (Pair) current;
                 put(obj.key, obj.value);
             }
         }
