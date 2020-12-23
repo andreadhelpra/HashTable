@@ -62,13 +62,10 @@ public class Hashtable<V> {
 	 */
 	public void put(String key, V value) {
 	    try{
-            if (getLoadFactor()>maxLoad){
-                resize();
-            }
-            Pair obj = new Pair(key, value);
+            if (getLoadFactor()>maxLoad) resize();
             int position = findEmpty(hash(key), 0, key);
             if (arr[position]==null) itemCount++;
-            arr[position]=obj;
+            arr[position] = new Pair(key, value);
 	    }catch (Exception e){
             throw new IllegalArgumentException("key is null" + e);
         }
@@ -80,18 +77,14 @@ public class Hashtable<V> {
 	 * @param key
 	 * @return
 	 */
-	public V get(String key) {
-	    return (key == null)? null : find(hash(key), key, 0);
-        }
+	public V get(String key) { return find(hash(key), key, 0); }
 
 	/**
 	 * Return true if the Hashtable contains this key, false otherwise 
 	 * @param key
 	 * @return
 	 */
-	public boolean hasKey(String key) {
-        return get(key) != null;
-    }
+	public boolean hasKey(String key) { return get(key) != null; }
 
 	/**
 	 * Return all the keys in this Hashtable as a collection
