@@ -34,8 +34,8 @@ public class Hashtable<V> {
 	 * @param pt
 	 */
 	public Hashtable(int initialCapacity, PROBE_TYPE pt) {
-		//if initialCapacity is already a prime number, nextPrime will return that
-        // if not it will change it to the smallest larger prime
+		/* If initialCapacity is already a prime number, nextPrime will return it
+         * If not it will change it to the smallest larger prime */
         this.max = nextPrime(initialCapacity);
 		this.probeType = pt;
 		this.arr = new Object[max];
@@ -46,7 +46,7 @@ public class Hashtable<V> {
 	 * @param initialCapacity
 	 */
 	public Hashtable(int initialCapacity) {
-		//call the other constructor
+		// Call the other constructor and set LINEAR_PROBE to the probe type
 		this(initialCapacity, PROBE_TYPE.LINEAR_PROBE);
 	}
 
@@ -61,11 +61,16 @@ public class Hashtable<V> {
 	 * @param value
 	 */
 	public void put(String key, V value) {
+	    // If key is null an exception will be thrown
 	    try{
-            if (getLoadFactor()>maxLoad) resize();
-            int position = findEmpty(hash(key), 0, key);
-            if (arr[position]==null) itemCount++;
-            arr[position] = new Pair(key, value);
+            if (getLoadFactor()>maxLoad) {
+                resize();
+            }
+            int position = findEmpty(hash(key), 0, key); // Unoccupied or need-to-overwrite position
+            if (arr[position]==null) {
+                itemCount++; // Add 1 to item count only when the position is empty
+            }
+            arr[position] = new Pair(key, value);// Put the new object at the right position
 	    }catch (Exception e){
             throw new IllegalArgumentException("key is null" + e);
         }
@@ -77,25 +82,27 @@ public class Hashtable<V> {
 	 * @param key
 	 * @return
 	 */
-	public V get(String key) { return find(hash(key), key, 0); }
+    // The find method will return null when key is null, otherwise it will return the value associated with key
+	public V get(String key) {return find(hash(key), key, 0);}
 
 	/**
 	 * Return true if the Hashtable contains this key, false otherwise 
 	 * @param key
 	 * @return
 	 */
-	public boolean hasKey(String key) { return get(key) != null; }
+	// When the value returned by the get method is not null return true, false otherwise
+	public boolean hasKey(String key) {return get(key) != null;}
 
 	/**
 	 * Return all the keys in this Hashtable as a collection
 	 * @return
 	 */
 	public Collection<String> getKeys() {
-		Collection<String> keys = new ArrayList<>();
+		Collection<String> keys = new ArrayList<>(); // Create a new ArrayList
 		for (int i=0; i<max; i++){
 		    if (arr[i]!=null){
-                Pair obj = (Pair) arr[i];
-                keys.add(obj.key);
+                Pair obj = (Pair)arr[i];
+                keys.add(obj.key); // If the position contains a key add this to the new ArrayList
 		    }
 		}
 		return keys;
@@ -105,13 +112,13 @@ public class Hashtable<V> {
 	 * Return the load factor, which is the ratio of itemCount to max
 	 * @return
 	 */
-	public double getLoadFactor() { return (double) itemCount/max; }
+	public double getLoadFactor() {return (double) itemCount/max;} // Convert int into double
 
 	/**
 	 * return the maximum capacity of the Hashtable
 	 * @return
 	 */
-	public int getCapacity() { return max; }
+	public int getCapacity() {return max;}
 	
 	/**
 	 * Find the value stored for this key, starting the search at position startPos in the array. If
@@ -129,10 +136,10 @@ public class Hashtable<V> {
 	private V find(int startPos, String key, int stepNum) {
 		Pair obj = (Pair)arr[startPos];
 		if (arr[startPos] == null){
-			return null;
+			return null; // Return null when the item at this position is null
 		}else if (obj.key.equals(key)){
-			return obj.value;
-		}else {
+			return obj.value; // Return the value when key is found
+		}else { // If key was not found use a recursion starting at the next location
 			int nextPos = getNextLocation(startPos,stepNum +1,key);
 			return find(nextPos, key, stepNum+1);
 		}
@@ -151,9 +158,9 @@ public class Hashtable<V> {
 	private int findEmpty(int startPos, int stepNum, String key) {
         Pair obj = (Pair)arr[startPos];
 	    if (arr[startPos]==null || obj.key.equals(key)){
-	        return startPos;
+	        return startPos; // When the position is unoccupied or must be overwritten return this
         }
-	    else {
+	    else { // Otherwise call findEmpty recursively starting at the next location
             return findEmpty(getNextLocation(startPos, stepNum + 1, key), stepNum + 1, key);
         }
 	}
@@ -209,19 +216,11 @@ public class Hashtable<V> {
 	 * @return
 	 */
 	private int hash(String key) {
-        int hashVal = key.hashCode();
-        hashVal %= max;
-
-        if (hashVal < 0) {
-            hashVal += max;
-        }
-        return hashVal;
-//	   int hash = 0;
-//
-//       for(int i=0; i<key.length();i++){
-//           hash = (hash + key.charAt(i))%max;
-//       }
-//       return hash % max;
+	   int hash = 0; // Hash initialised to 0
+       for(int i=0; i<key.length();i++){
+           hash = (hash * 31 + key.charAt(i))%max; // Generate a unique hash value
+       }
+       return hash % max; // Return the modulus of the hash value and max to make the generated value smaller
 	}
 
 	/**
@@ -230,13 +229,10 @@ public class Hashtable<V> {
 	 * @return
 	 */
 	private boolean isPrime(int n) {
-	    if(n<2)return false;
-        if(n == 2) return true; // 2 is a prime number
-        if(n%2==0) return false; // even numbers are not prime
-		// clock initiated with 3. the clock adds 2 at each cycle
-		// as we already know even numbers are not prime
-		for (int i=3; i*i<=n; i+=2){
-			if (n%i==0) return false;
+        if (n == 2) {return true;} // 2 is a prime number
+        if (n<2 || n%2==0) {return false;} // Numbers smaller than 2 and even numbers are not prime
+		for (int i=3; i*i<=n; i+=2){ // Divide n by odd numbers
+			if (n%i==0) {return false;} // If its modulus is 0 it is not prime
 		}
     	return true;
 	}
@@ -247,10 +243,10 @@ public class Hashtable<V> {
 	 * @return
 	 */
 	private int nextPrime(int n){
-	    if (n % 2 == 0) {
+	    if (n % 2 == 0) { // If n is even make it odd
             n++;
         }
-	    return (isPrime(n)) ? n : nextPrime(n+=2);
+	    return (isPrime(n)) ? n : nextPrime(n+=2); // Return n if prime or start recursion with the next odd number
 	}
 
 	/**
@@ -259,12 +255,12 @@ public class Hashtable<V> {
 	 * of the old array.
 	 */
 	private void resize() {
-        max = nextPrime(max * 2);
-        Object[] oldArr= arr;
-        arr = new Object[max];
-        for (Object current : oldArr) {
+        max = nextPrime(max * 4); // New capacity is the next prime number at least four times the old capacity
+        Object[] oldArr = arr; // Save the old array
+        arr = new Object[max]; // Create a new array with the new capacity
+        for (Object current : oldArr) { // Pass each item that is not null from the old array to the new one
             if (current != null) {
-                Pair obj = (Pair) current;
+                Pair obj = (Pair)current;
                 put(obj.key, obj.value);
             }
         }
@@ -275,7 +271,6 @@ public class Hashtable<V> {
 	 * Instances of Pair are stored in the underlying array. We can't just store
 	 * the value because we need to check the original key in the case of collisions.
 	 * @author jb259
-	 *
 	 */
 	private class Pair {
 		private String key;
