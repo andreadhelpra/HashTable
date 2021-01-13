@@ -39,6 +39,7 @@ public class Hashtable<V> {
         this.max = nextPrime(initialCapacity);
 		this.probeType = pt;
 		this.arr = new Object[max];
+		this.itemCount=0;
 	}
 	
 	/**
@@ -62,18 +63,19 @@ public class Hashtable<V> {
 	 */
 	public void put(String key, V value) {
 	    // If key is null an exception will be thrown
-	    try{
-            if (getLoadFactor()>maxLoad) {
-                resize();
-            }
-            int position = findEmpty(hash(key), 0, key); // Unoccupied or need-to-overwrite position
-            if (arr[position]==null) {
-                itemCount++; // Add 1 to item count only when the position is empty
-            }
-            arr[position] = new Pair(key, value);// Put the new object at the right position
-	    }catch (Exception e){
-            throw new IllegalArgumentException("key is null" + e);
-        }
+		if (key!=null) {
+			if (getLoadFactor() > maxLoad) {
+				resize();
+			}
+			int position = findEmpty(hash(key), 0, key); // Unoccupied or need-to-overwrite position
+			if (arr[position] == null) {
+				itemCount++; // Add 1 to item count only when the position is empty
+			}
+			arr[position] = new Pair(key, value);// Put the new object at the right position
+		}
+		else{
+			throw new IllegalArgumentException("key is null");
+		}
 	}
 
 	/**
@@ -161,7 +163,8 @@ public class Hashtable<V> {
 	        return startPos; // When the position is unoccupied or must be overwritten return this
         }
 	    else { // Otherwise call findEmpty recursively starting at the next location
-            return findEmpty(getNextLocation(startPos, stepNum + 1, key), stepNum + 1, key);
+            int nextPos = getNextLocation(startPos,stepNum + 1,key);
+            return findEmpty(nextPos, stepNum + 1, key);
         }
 	}
 
@@ -216,11 +219,13 @@ public class Hashtable<V> {
 	 * @return
 	 */
 	private int hash(String key) {
+
 	   int hash = 0; // Hash initialised to 0
        for(int i=0; i<key.length();i++){
-           hash = (hash * 31 + key.charAt(i))%max; // Generate a unique hash value
-       }
-       return hash % max; // Return the modulus of the hash value and max to make the generated value smaller
+           hash = hash * 233  + key.charAt(i);// Generate a unique hash key
+           hash %= max;// Return the modulus of the hash value and max to make the generated value smaller
+      }
+      return hash;
 	}
 
 	/**
@@ -255,9 +260,10 @@ public class Hashtable<V> {
 	 * of the old array.
 	 */
 	private void resize() {
-        max = nextPrime(max * 4); // New capacity is the next prime number at least four times the old capacity
+        max = nextPrime(max * 2); // New capacity is the next prime number after doubling the old capacity
         Object[] oldArr = arr; // Save the old array
         arr = new Object[max]; // Create a new array with the new capacity
+        itemCount=0; // Reset the item count
         for (Object current : oldArr) { // Pass each item that is not null from the old array to the new one
             if (current != null) {
                 Pair obj = (Pair)current;
