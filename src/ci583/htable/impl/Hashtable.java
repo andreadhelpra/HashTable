@@ -20,6 +20,8 @@ public class Hashtable<V> {
 	private int max; //the size of arr. This should be a prime number
 	private int itemCount; //the number of items stored in arr
 	private final double maxLoad = 0.6; //the maximum load factor
+	private final int offsetBasis = 0x811c9dc5; // Offset basis for a 32 bit hash in hex
+	private final int prime = 16777619; // Prime number for a 32 bit hash
 
 	public static enum PROBE_TYPE {
 		LINEAR_PROBE, QUADRATIC_PROBE, DOUBLE_HASH;
@@ -67,11 +69,11 @@ public class Hashtable<V> {
 			if (getLoadFactor() > maxLoad) {
 				resize();
 			}
-			int position = findEmpty(hash(key), 0, key); // Unoccupied or need-to-overwrite position
-			if (arr[position] == null) {
+			int index = findEmpty(hash(key), 0, key); // Unoccupied or need-to-overwrite position
+			if (arr[index] == null) {
 				itemCount++; // Add 1 to item count only when the position is empty
 			}
-			arr[position] = new Pair(key, value);// Put the new object at the right position
+			arr[index] = new Pair(key, value);// Put the new object at the right position
 		}
 		else{
 			throw new IllegalArgumentException("key is null");
@@ -142,7 +144,7 @@ public class Hashtable<V> {
 		}else if (obj.key.equals(key)){
 			return obj.value; // Return the value when key is found
 		}else { // If key was not found use a recursion starting at the next location
-			int nextPos = getNextLocation(startPos,stepNum +1,key);
+			int nextPos = getNextLocation(startPos,stepNum+1,key);
 			return find(nextPos, key, stepNum+1);
 		}
 	}
@@ -216,16 +218,18 @@ public class Hashtable<V> {
 	 * on creating hash functions. The return value should be less than max, the maximum capacity 
 	 * of the array
 	 * @param key
-	 * @return
+	 * @returnariant
 	 */
 	private int hash(String key) {
-
-	   int hash = 0; // Hash initialised to 0
-       for(int i=0; i<key.length();i++){
-           hash = hash * 233  + key.charAt(i);// Generate a unique hash key
-           hash %= max;// Return the modulus of the hash value and max to make the generated value smaller
-      }
-      return hash;
+	    // FNV-1a alternative algorithm 32 bit
+		// http://www.isthe.com/chongo/tech/comp/fnv/index.html
+		int hashVal=offsetBasis; // Set the hash value to the offset basis
+        final byte[] bytes = key.getBytes(); // Get bytes of the 'key' string
+        for (int i = 0; i < bytes.length; i++) { // For each octet
+            hashVal ^= bytes[i]; // XOR operation
+            hashVal *= prime; // Multiply by prime number
+        }
+        return Math.abs(hashVal)%max; // Return modulus of the absolute result
 	}
 
 	/**
@@ -260,7 +264,7 @@ public class Hashtable<V> {
 	 * of the old array.
 	 */
 	private void resize() {
-        max = nextPrime(max * 2); // New capacity is the next prime number after doubling the old capacity
+	   max = nextPrime(max * 2);// New capacity is the next prime number after doubling the old capacity
         Object[] oldArr = arr; // Save the old array
         arr = new Object[max]; // Create a new array with the new capacity
         itemCount=0; // Reset the item count
